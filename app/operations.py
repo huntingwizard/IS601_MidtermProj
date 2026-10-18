@@ -7,17 +7,18 @@ class Operation(ABC):
     """
     Abstract class used to define structure of operations
     """
-    @abstractmethod
+    
     def __str__(self) -> str:
         """
         defines how operation is called as a string, returning "str: Operation Name"
         """
 
         return self.__class__.__name__
+    @abstractmethod
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
 
         "defines the structure of what happens when an operation is executed. returns a Decimal when given two input Decimals"
-        pass
+        pass # pragma: no cover
     def validate_operands(self, a: Decimal, b: Decimal) -> None:
         "defines the structure of the validotor of operation inputs. takes in the operands and returns nothing."
         pass
@@ -154,7 +155,7 @@ class Root(Operation):
         a^(1/b)
         """
         self.validate_operands(a, b)
-        return Decimal(pow(float(a), 1 / float(b)))
+        return a**(1/b)
 
 
 class Modulus(Operation):
@@ -186,7 +187,7 @@ class Modulus(Operation):
         return a % b
 class Int_Divide(Operation):
     """
-    Division operation implementation.
+    Integer Division operation implementation.
 
     Performs the division of one number by another.
     """
@@ -269,7 +270,11 @@ class OperationFactory:
         'multiply': Multiplication,
         'divide': Division,
         'power': Power,
-        'root': Root
+        'root': Root,
+        'modulus': Modulus,
+        'int_divide': Int_Divide,
+        'percent': Percent,
+        'abs_diff': Abs_Diff,
     }
 
     @classmethod

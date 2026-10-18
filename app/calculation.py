@@ -39,7 +39,7 @@ class Calculation:
             "Division": lambda x, y: x / y if y != 0 else self._raise_div_zero(),
             "Power": lambda x, y: x**y,
             "Root": lambda x, y: (
-                Decimal(pow(float(x), 1 / float(y))) 
+                x**(1/y)
                 if x >= 0 and y != 0 
                 else self._raise_invalid_root(x, y)
             ),
