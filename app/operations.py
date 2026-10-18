@@ -118,7 +118,7 @@ class Power(Operation):
        """
         super().validate_operands(a, b)
         if b < 0 and a==0:
-            raise ValidationError("Division by zero is not allowed")
+            raise ValidationError("0 cannot be raised to negative power")
     def execute(self, a: Decimal, b: Decimal) -> Decimal:
         """
         raises number a to the power of number b
