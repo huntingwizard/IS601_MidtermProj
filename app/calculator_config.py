@@ -3,7 +3,7 @@
 ########################
 
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from numbers import Number
 from pathlib import Path
 import os
@@ -41,7 +41,14 @@ class CalculatorConfig:
     2. A value from the environment / .env file
     3. A built-in default
     """
-
+    def _read_env(name: str, default: str, cast):
+        """Read an environment variable and convert it, or raise ConfigurationError."""
+        raw = os.getenv(name, default)
+        try:
+            return cast(raw)
+        except (ValueError, InvalidOperation):
+            raise ConfigurationError(f"{name} has an invalid value: {raw!r}")
+        
     def __init__(
         self,
         base_dir: Optional[Path] = None,
@@ -75,8 +82,9 @@ class CalculatorConfig:
         ).resolve()
 
         # Cap on how many calculations are remembered
-        self.max_history_size = max_history_size or int(
-            os.getenv('CALCULATOR_MAX_HISTORY_SIZE', '1000')
+        self.max_history_size = (
+            max_history_size if max_history_size is not None
+            else self._read_env('CALCULATOR_MAX_HISTORY_SIZE', '1000', int)
         )
         # An explicit argument wins; otherwise "true" or "1" in the environment means on
         auto_save_env = os.getenv('CALCULATOR_AUTO_SAVE', 'true').lower()
@@ -84,16 +92,19 @@ class CalculatorConfig:
             auto_save_env == 'true' or auto_save_env == '1'
         )
         # Number of decimal places for results
-        self.precision = precision or int(
-            os.getenv('CALCULATOR_PRECISION', '10')
+        self.precision = (
+            precision if precision is not None
+            else self._read_env('CALCULATOR_PRECISION', '10', int)
         )
         # Largest absolute number the user is allowed to enter
-        self.max_input_value = max_input_value or Decimal(
-            os.getenv('CALCULATOR_MAX_INPUT_VALUE', '1e999')
+        self.max_input_value = (
+            max_input_value if max_input_value is not None
+            else self._read_env('CALCULATOR_MAX_INPUT_VALUE', '1e999', Decimal)
         )
         # Encoding used for any file reads and writes
-        self.default_encoding = default_encoding or os.getenv(
-            'CALCULATOR_DEFAULT_ENCODING', 'utf-8'
+        self.default_encoding = (
+            default_encoding if default_encoding is not None
+            else os.getenv('CALCULATOR_DEFAULT_ENCODING', 'utf-8')
         )
     @property
     def log_dir(self) -> Path:
