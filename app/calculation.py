@@ -4,7 +4,8 @@ from decimal import Decimal, InvalidOperation
 import logging
 from typing import Any, Dict
 
-from app.exceptions import OperationError
+from app.exceptions import OperationError, ValidationError
+from app.operations import Operation
 
 @dataclass
 class Calculation:
@@ -32,31 +33,12 @@ class Calculation:
 
         returns a decimal or raises an error.
         """
-        operations = {
-            "Addition": lambda x, y: x + y,
-            "Subtraction": lambda x, y: x - y,
-            "Multiplication": lambda x, y: x * y,
-            "Division": lambda x, y: x / y if y != 0 else self._raise_div_zero(),
-            "Power": lambda x, y: x**y,
-            "Root": lambda x, y: (
-                x**(1/y)
-                if x >= 0 and y != 0 
-                else self._raise_invalid_root(x, y)
-            ),
-            "Modulus": lambda x, y: x % y if y != 0 else self._raise_div_zero(),
-            "Int_Divide":lambda x, y: x // y if y != 0 else self._raise_div_zero(),
-            "Percent": lambda x, y: (x*100) / y if y != 0 else self._raise_div_zero(),
-            "Abs_Diff": lambda x, y: abs(x - y)
-        }
-
-        # Retrieve the operation function based on the operation name
-        op = operations.get(self.operation)
-        if not op:
+        op_class = {cls.__name__: cls for cls in Operation.__subclasses__()}.get(self.operation)
+        if op_class is None:
             raise OperationError(f"Unknown operation: {self.operation}")
 
         try:
-            # Execute the operation with the provided operands
-            return op(self.operand1, self.operand2)
+            return op_class().execute(self.operand1, self.operand2)
         except (InvalidOperation, ValueError, ArithmeticError) as e:
             # Handle any errors that occur during calculation
             raise OperationError(f"Calculation failed: {str(e)}")
@@ -202,9 +184,7 @@ class Calculation:
             str: Formatted string representation of the result.
         """
         try:
-            # Remove trailing zeros and format to specified precision
-            return str(self.result.normalize().quantize(
-                Decimal('0.' + '0' * precision)
-            ).normalize())
+            rounded = self.result.quantize(Decimal(1).scaleb(-precision))
+            return f"{(rounded + 0).normalize():f}"
         except InvalidOperation:  # pragma: no cover
-            return str(self.result)
+            return f"{self.result:f}"
