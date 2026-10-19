@@ -84,3 +84,60 @@ class TestEnvironmentOverrides:
     def test_auto_save_parsing(self, monkeypatch, tmp_path, value, expected):
         monkeypatch.setenv("CALCULATOR_AUTO_SAVE", value)
         assert CalculatorConfig(base_dir=tmp_path).auto_save is expected
+class TestConstructorArguments:
+    """Values passed to the constructor beat the environment."""
+
+    def test_arguments_override_env(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("CALCULATOR_PRECISION", "4")
+        monkeypatch.setenv("CALCULATOR_AUTO_SAVE", "true")
+        config = CalculatorConfig(
+            base_dir=tmp_path,
+            max_history_size=5,
+            auto_save=False,
+            precision=7,
+            max_input_value=Decimal(100),
+            default_encoding="ascii",
+        )
+        assert config.max_history_size == 5
+        assert config.auto_save is False       # explicit False must not fall back to env
+        assert config.precision == 7
+        assert config.max_input_value == Decimal(100)
+        assert config.default_encoding == "ascii"
+
+
+class TestInvalidValues:
+    """Bad values raise ConfigurationError instead of a raw Python error."""
+
+    @pytest.mark.parametrize("name, value", [
+        ("CALCULATOR_MAX_HISTORY_SIZE", "abc"),
+        ("CALCULATOR_MAX_HISTORY_SIZE", ""),    # blank counts as "set", so no default is used
+        ("CALCULATOR_MAX_HISTORY_SIZE", "1.5"),
+        ("CALCULATOR_PRECISION", "x"),
+        ("CALCULATOR_MAX_INPUT_VALUE", "abc"),
+    ])
+    def test_unparseable_values(self, monkeypatch, tmp_path, name, value):
+        """These fail while the config is being built, before validate() runs."""
+        monkeypatch.setenv(name, value)
+        with pytest.raises(ConfigurationError, match=name):
+            CalculatorConfig(base_dir=tmp_path)
+
+    @pytest.mark.parametrize("kwargs", [
+        {"max_history_size": 0},
+        {"max_history_size": -5},
+        {"precision": 0},
+        {"precision": -1},
+        {"max_input_value": Decimal(0)},
+        {"max_input_value": Decimal(-10)},
+        {"default_encoding": "utf-99"},         # not a real encoding
+    ])
+    def test_validate_rejects(self, tmp_path, kwargs):
+        """Values that parse fine but aren't allowed are caught by validate()."""
+        config = CalculatorConfig(base_dir=tmp_path, **kwargs)
+        with pytest.raises(ConfigurationError):
+            config.validate()
+
+    def test_zero_from_env_is_rejected(self, monkeypatch, tmp_path):
+        """A 0 in .env reaches validate() instead of silently becoming the default."""
+        monkeypatch.setenv("CALCULATOR_MAX_HISTORY_SIZE", "0")
+        with pytest.raises(ConfigurationError):
+            CalculatorConfig(base_dir=tmp_path).validate()
