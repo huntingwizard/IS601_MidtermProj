@@ -286,3 +286,56 @@ class TestAbsDiff(BaseOperationTest):
         "equal_numbers": {"a": "2.5", "b": "2.5", "expected": "0"},
     }
     invalid_test_cases = {}  # any two numbers have an absolute difference
+class TestOperationFactory:
+    """Test OperationFactory functionality."""
+
+    def test_create_valid_operations(self):
+        """Every command name creates the right class, in any letter case."""
+        operation_map = {
+            "add": Addition,
+            "subtract": Subtraction,
+            "multiply": Multiplication,
+            "divide": Division,
+            "power": Power,
+            "root": Root,
+            "modulus": Modulus,
+            "int_divide": Int_Divide,
+            "percent": Percent,
+            "abs_diff": Abs_Diff,
+        }
+
+        for op_name, op_class in operation_map.items():
+            operation = OperationFactory.create_operation(op_name)
+            assert isinstance(operation, op_class)
+            # create_operation lowercases its input, so uppercase works too
+            operation = OperationFactory.create_operation(op_name.upper())
+            assert isinstance(operation, op_class)
+
+    def test_create_invalid_operation(self):
+        """An unknown name raises an error that names the bad operation."""
+        # Change ValueError to OperationError if you switch the factory
+        with pytest.raises(ValueError, match="Unknown operation: invalid_op"):
+            OperationFactory.create_operation("invalid_op")
+
+    def test_register_valid_operation(self, monkeypatch):
+        """A new Operation subclass can be registered and then created by name."""
+        # Work on a copy of the dictionary so "new_op" doesn't leak into other tests
+        monkeypatch.setattr(
+            OperationFactory, "_operations", dict(OperationFactory._operations)
+        )
+
+        class NewOperation(Operation):
+            def execute(self, a: Decimal, b: Decimal) -> Decimal:
+                return a
+
+        OperationFactory.register_operation("new_op", NewOperation)
+        operation = OperationFactory.create_operation("new_op")
+        assert isinstance(operation, NewOperation)
+
+    def test_register_invalid_operation(self):
+        """Registering a class that doesn't inherit from Operation raises TypeError."""
+        class NotAnOperation:
+            pass
+
+        with pytest.raises(TypeError, match="Operation class must inherit"):
+            OperationFactory.register_operation("invalid", NotAnOperation)
