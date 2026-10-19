@@ -41,6 +41,7 @@ class CalculatorConfig:
     2. A value from the environment / .env file
     3. A built-in default
     """
+    @staticmethod
     def _read_env(name: str, default: str, cast):
         """Read an environment variable and convert it, or raise ConfigurationError."""
         raw = os.getenv(name, default)
