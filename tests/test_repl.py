@@ -1,10 +1,3 @@
-"""
-Tests for calculator_repl.py, driven by scripted input instead of a keyboard.
-
-Output contains color codes, so checks look for text inside the output
-instead of comparing whole lines.
-"""
-
 import pytest
 
 from app.calculator import Calculator
@@ -66,4 +59,27 @@ class TestStartupAndExit:
 
     def test_unknown_command(self, repl):
         assert "Unknown command: 'bogus'" in repl(["bogus", "exit"])
+
+
+class TestOperationCommands:
+    @pytest.mark.parametrize("command, a, b, expected", [
+        ("add", "2", "3", "Result: 5"),
+        ("subtract", "2", "3", "Result: -1"),
+        ("multiply", "4", "2.5", "Result: 10"),
+        ("divide", "7", "2", "Result: 3.5"),
+        ("divide", "2", "3", "Result: 0.6666666667"),    # rounded to the precision setting
+        ("power", "2", "3", "Result: 8"),
+        ("root", "27", "3", "Result: 3"),
+        ("modulus", "7", "3", "Result: 1"),
+        ("int_divide", "7", "2", "Result: 3"),
+        ("percent", "5", "10", "Result: 50"),            # not shown as 5E+1
+        ("abs_diff", "3", "10", "Result: 7"),
+    ])
+    def test_each_operation(self, repl, command, a, b, expected):
+        assert expected in repl([command, a, b, "exit"])
+
+    def test_calculation_is_logged_and_auto_saved(self, repl, config):
+        repl(["add", "1", "1", "exit"])
+        assert config.history_file.exists()
+        assert "Calculation: Addition(1, 1) = 2" in config.log_file.read_text()
 
