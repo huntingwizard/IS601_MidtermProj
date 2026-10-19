@@ -100,3 +100,35 @@ def test_percent(a, b, expected):
 ])
 def test_abs_diff(a, b, expected):
     assert Abs_Diff().execute(D(a), D(b)) == D(expected)
+
+
+# ---------- Fail testing ----------
+
+def test_division_by_zero():
+    with pytest.raises(ValidationError):
+        Division().execute(D(5), D(0))
+
+def test_power_zero_to_negative_exponent():
+    """0 to a negative power means 1/0."""
+    with pytest.raises(ValidationError):
+        Power().execute(D(0), D(-1))
+
+@pytest.mark.parametrize("a, b", [
+    ("-4", "2"),                           # root of a negative number
+    ("4", "0"),                            # zero root degree
+])
+def test_root_invalid(a, b):
+    with pytest.raises(ValidationError):
+        Root().execute(D(a), D(b))
+
+def test_modulus_by_zero():
+    with pytest.raises(ValidationError):
+        Modulus().execute(D(5), D(0))
+
+def test_int_divide_by_zero():
+    with pytest.raises(ValidationError):
+        Int_Divide().execute(D(5), D(0))
+
+def test_percent_of_zero():
+    with pytest.raises(ValidationError):
+        Percent().execute(D(5), D(0))
