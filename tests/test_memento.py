@@ -27,3 +27,25 @@ class TestCalculatorMemento:
         with pytest.raises(FrozenInstanceError):
             memento.history = ()
         assert isinstance(memento.history, tuple)
+class TestCalculatorMementoUsage:
+    """How Calculator creates and restores snapshots."""
+
+    def test_snapshot_is_unaffected_by_later_changes(self, calc, run):
+        """A snapshot taken now must not change when history grows afterward."""
+        run("add", "1", "1")
+        snapshot = calc._snapshot()
+        run("add", "2", "2")
+        assert len(snapshot.history) == 1
+
+    def test_undo_and_redo_restore_exact_states(self, calc, run):
+        """Each undo/redo step restores the right earlier state, and history stays a list."""
+        run("add", "1", "1")
+        run("add", "2", "2")
+        calc.undo()
+        assert [c.operand1 for c in calc.history] == [Decimal(1)]
+        calc.undo()
+        assert calc.history == []
+        calc.redo()
+        calc.redo()
+        assert [c.operand1 for c in calc.history] == [Decimal(1), Decimal(2)]
+        assert isinstance(calc.history, list)
