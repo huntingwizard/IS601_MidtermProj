@@ -1,7 +1,7 @@
 ########################
 # Calculator Config    #
 ########################
-
+import codecs
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from numbers import Number
@@ -172,3 +172,7 @@ class CalculatorConfig:
             raise ConfigurationError("precision must be positive")
         if self.max_input_value <= 0:
             raise ConfigurationError("max_input_value must be positive")
+        try:
+            codecs.lookup(self.default_encoding)
+        except LookupError:
+            raise ConfigurationError(f"Unknown encoding: {self.default_encoding}")
