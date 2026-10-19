@@ -84,6 +84,7 @@ class TestEnvironmentOverrides:
     def test_auto_save_parsing(self, monkeypatch, tmp_path, value, expected):
         monkeypatch.setenv("CALCULATOR_AUTO_SAVE", value)
         assert CalculatorConfig(base_dir=tmp_path).auto_save is expected
+
 class TestConstructorArguments:
     """Values passed to the constructor beat the environment."""
 
