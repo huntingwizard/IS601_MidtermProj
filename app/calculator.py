@@ -54,6 +54,7 @@ class Calculator:
         self.operation_strategy = operation
 
     def perform_operation(self, a: Union[str, Number], b: Union[str, Number]) -> Decimal:
+        #executes operation noted using number a and number b
         if not self.operation_strategy:
             raise OperationError("No operation set")
         try:
@@ -71,7 +72,7 @@ class Calculator:
             self.logger.error("Unexpected failure: %s", e)
             raise OperationError(f"Operation failed: {e}")
 
-        self._record(calculation)
+        self._record(calculation) #adds calculation to history
         return result
 
     def _record(self, calculation: Calculation) -> None:
@@ -111,6 +112,7 @@ class Calculator:
 
     # ---------- History ----------
     def show_history(self) -> List[str]:
+        #formats history into clean view
         return [
             f"{c.operation}({c.operand1:f}, {c.operand2:f}) = "
             f"{c.format_result(self.config.precision)}"
@@ -126,6 +128,7 @@ class Calculator:
 
     # ---------- Persistence (pandas) ----------
     def save_history(self) -> None:
+        #writes history to csv file
         try:
             self.config.history_dir.mkdir(parents=True, exist_ok=True)
             df = pd.DataFrame([c.to_dict() for c in self.history], columns=CSV_COLUMNS)
@@ -156,6 +159,7 @@ class Calculator:
         return [Calculation.from_dict(row) for row in df.to_dict("records")]
 
     def load_history(self) -> None:
+        #reads history from file and loads it into current history
         try:
             loaded = self._read_history_file(self.config.history_file)
         except OperationError as e:

@@ -6,15 +6,22 @@ from app.colors import error, info, prompt, success, warning
 
 def calculator_repl():
     try:
-        calc=Calculator()
-        calc.add_observer(LoggingObserver())
-        calc.add_observer(AutoSaveObserver(calc))
-        operations = sorted(OperationFactory._operations)
+        calc=Calculator() #creates Calculator Instance
+
+        calc.add_observer(LoggingObserver()) #adds in Logging Observer
+
+
+        calc.add_observer(AutoSaveObserver(calc)) #adds in AutoSaving Observer
+
+    
+        operations = sorted(OperationFactory._operations) #Creates Operations instance
         print(info("Calculator started. Type 'help' for commands."))
+
+        #Starts Read Input Loops
         while True:
             try:
                 inp=input(prompt("Enter command: ")).lower().strip()
-                if inp=="help":
+                if inp=="help": 
                     print(info("\nAvailable commands:"))
                     print(info("\nOperations: " + ", ".join(operations)))
                     print(info("  history - Show calculation history"))
@@ -28,20 +35,21 @@ def calculator_repl():
                     print(info("C U LATER"))
                     break
                 elif inp == "history":
+                    # Grabs history list
                     entries = calc.show_history()
                     if not entries:
                         print(warning("No calculations in history"))
                     else:
-                        for i, e in enumerate(entries, 1):
+                        for i, e in enumerate(entries, 1): #prints out history list
                             print(info(f"{i}. {e}"))
                 elif inp == "clear":
-                    calc.clear_history()
+                    calc.clear_history() # clears history
                     print(success("History cleared"))
-                elif inp == "undo":
+                elif inp == "undo": #takes off last calculation from history stack
                     print(success("Operation undone") if calc.undo() else warning("Nothing to undo"))
-                elif inp == "redo":
+                elif inp == "redo": #takes off last calculation from history stack
                     print(success("Operation redone") if calc.redo() else warning("Nothing to redo"))
-                elif inp in ("save", "load"):
+                elif inp in ("save", "load"): # Saves/loads current history to file
                     try:
                         calc.save_history() if inp == "save" else calc.load_history()
                         print(success(f"History {'saved' if inp == 'save' else 'loaded'} successfully"))
@@ -52,16 +60,18 @@ def calculator_repl():
                         print(info("\n enter your 2 number inputs"))
                         a=input(prompt("First Input "))
                         b=input(prompt("Second input "))
-                        operation = OperationFactory.create_operation(inp)
+
+                        operation = OperationFactory.create_operation(inp) #creates inputed operation
                         calc.set_operation(operation)
 
                         calc.perform_operation(a, b)
-                        print(success(f"\nResult: {calc.last_calculation.format_result(calc.config.precision)}"))
+                        print(success(f"\nResult: {calc.last_calculation.format_result(calc.config.precision)}")) #prints out calculation
 
                     except (ValidationError, OperationError) as e:
                         # Handle known exceptions related to validation or operation errors
                         print(error(f"Error: {e}"))
                     except Exception as e:
+                        #handles all other exceptions
                         print(error(f"Unexpected error: {e}"))
                 else:
                     print(warning(f"Unknown command: '{inp}'. Type 'help' for available commands."))
